@@ -130,8 +130,8 @@ delete window.$;
 	} else {
 		const pid = Math.floor(Math.random() * 30000) + 1000
 		
-		const applicationId = quest.config.application.id
-		const applicationName = quest.config.application.name
+		const applicationId = quest.config.application?.id
+		const applicationName = quest.config.application?.name
 		const questName = quest.config.messages.questName
 		const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2
 		const taskName = ["WATCH_VIDEO", "PLAY_ON_DESKTOP", "STREAM_ON_DESKTOP", "PLAY_ACTIVITY", "WATCH_VIDEO_ON_MOBILE"].find(x => taskConfig.tasks[x] != null)

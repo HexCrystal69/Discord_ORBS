@@ -34,8 +34,8 @@ if (quests.length === 0) {
 
 		const pid = Math.floor(Math.random() * 30000) + 1000
 
-		const applicationId = quest.config.application.id
-		const applicationName = quest.config.application.name
+		const applicationId = quest.config.application?.id
+		const applicationName = quest.config.application?.name
 		const questName = quest.config.messages.questName
 		const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2
 		const taskName = supportedTasks.find(x => taskConfig.tasks[x] != null)
