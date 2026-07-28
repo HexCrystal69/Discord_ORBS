@@ -130,11 +130,13 @@ delete window.$;
 	} else {
 		const pid = Math.floor(Math.random() * 30000) + 1000
 		
-		const applicationId = quest.config.application?.id
-		const applicationName = quest.config.application?.name
-		const questName = quest.config.messages.questName
 		const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2
 		const taskName = ["WATCH_VIDEO", "PLAY_ON_DESKTOP", "STREAM_ON_DESKTOP", "PLAY_ACTIVITY", "WATCH_VIDEO_ON_MOBILE"].find(x => taskConfig.tasks[x] != null)
+		// v1: quest.config.application.id | v2: taskConfig.tasks[taskName].applications[0].id
+		const v2App = taskConfig.tasks[taskName]?.applications?.[0]
+		const applicationId = quest.config.application?.id ?? v2App?.id
+		const applicationName = quest.config.application?.name ?? v2App?.name ?? quest.config.messages.questName
+		const questName = quest.config.messages.questName
 		const secondsNeeded = taskConfig.tasks[taskName].target
 		let secondsDone = quest.userStatus?.progress?.[taskName]?.value ?? 0
 

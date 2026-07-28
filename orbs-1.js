@@ -28,19 +28,30 @@ let isApp = typeof DiscordNative !== "undefined"
 if (quests.length === 0) {
 	console.log("You don't have any uncompleted quests!")
 } else {
+	console.log(`Found ${quests.length} uncompleted quest(s). Starting auto-completion...`)
+	let questIndex = 0
+
 	let doJob = function () {
-		const quest = quests.pop()
-		if (!quest) return
+		const quest = quests[questIndex++]
+		if (!quest) {
+			console.log("All quests completed!")
+			return
+		}
 
 		const pid = Math.floor(Math.random() * 30000) + 1000
 
-		const applicationId = quest.config.application?.id
-		const applicationName = quest.config.application?.name
 		const questName = quest.config.messages.questName
 		const taskConfig = quest.config.taskConfig ?? quest.config.taskConfigV2
 		const taskName = supportedTasks.find(x => taskConfig.tasks[x] != null)
 		const secondsNeeded = taskConfig.tasks[taskName].target
 		let secondsDone = quest.userStatus?.progress?.[taskName]?.value ?? 0
+
+		// v1: quest.config.application.id | v2: taskConfig.tasks[taskName].applications[0].id
+		const v2App = taskConfig.tasks[taskName]?.applications?.[0]
+		const applicationId = quest.config.application?.id ?? v2App?.id
+		const applicationName = quest.config.application?.name ?? v2App?.name ?? questName
+
+		console.log(`\n--- Quest ${questIndex}/${quests.length}: ${questName} (${taskName}) | appId: ${applicationId ?? "N/A"} ---`)
 
 		if (taskName === "WATCH_VIDEO" || taskName === "WATCH_VIDEO_ON_MOBILE") {
 			const maxFuture = 10, speed = 7, interval = 1
@@ -65,7 +76,7 @@ if (quests.length === 0) {
 				if (!completed) {
 					await api.post({ url: `/quests/${quest.id}/video-progress`, body: { timestamp: secondsNeeded } })
 				}
-				console.log("Quest completed!")
+				console.log(`Quest "${questName}" completed!`)
 				doJob()
 			}
 			fn()
@@ -73,9 +84,18 @@ if (quests.length === 0) {
 		} else if (taskName === "PLAY_ON_DESKTOP") {
 			if (!isApp) {
 				console.log("This no longer works in browser for non-video quests. Use the discord desktop app to complete the", questName, "quest!")
+				doJob()
+			} else if (!applicationId) {
+				console.log(`Skipping quest "${questName}" - no application data available (applicationId is undefined).`)
+				doJob()
 			} else {
 				api.get({ url: `/applications/public?application_ids=${applicationId}` }).then(res => {
 					const appData = res.body[0]
+					if (!appData) {
+						console.log(`Skipping quest "${questName}" - application data not found from API.`)
+						doJob()
+						return
+					}
 					const win32Exe = appData.executables?.find(x => x.os === "win32")
 					const exeName = win32Exe ? win32Exe.name.replace(">", "") : `${appData.name}.exe`
 
@@ -105,7 +125,7 @@ if (quests.length === 0) {
 						console.log(`Quest progress: ${progress}/${secondsNeeded}`)
 
 						if (progress >= secondsNeeded) {
-							console.log("Quest completed!")
+							console.log(`Quest "${questName}" completed!`)
 
 							RunningGameStore.getRunningGames = realGetRunningGames
 							RunningGameStore.getGameForPID = realGetGameForPID
@@ -118,11 +138,18 @@ if (quests.length === 0) {
 					FluxDispatcher.subscribe("QUESTS_SEND_HEARTBEAT_SUCCESS", fn)
 
 					console.log(`Spoofed your game to ${applicationName}. Wait for ${Math.ceil((secondsNeeded - secondsDone) / 60)} more minutes.`)
+				}).catch(err => {
+					console.error(`Failed to fetch application data for "${questName}":`, err)
+					doJob()
 				})
 			}
 		} else if (taskName === "STREAM_ON_DESKTOP") {
 			if (!isApp) {
 				console.log("This no longer works in browser for non-video quests. Use the discord desktop app to complete the", questName, "quest!")
+				doJob()
+			} else if (!applicationId) {
+				console.log(`Skipping quest "${questName}" - no application data available (applicationId is undefined).`)
+				doJob()
 			} else {
 				let realFunc = ApplicationStreamingStore.getStreamerActiveStreamMetadata
 				ApplicationStreamingStore.getStreamerActiveStreamMetadata = () => ({
@@ -136,7 +163,7 @@ if (quests.length === 0) {
 					console.log(`Quest progress: ${progress}/${secondsNeeded}`)
 
 					if (progress >= secondsNeeded) {
-						console.log("Quest completed!")
+						console.log(`Quest "${questName}" completed!`)
 
 						ApplicationStreamingStore.getStreamerActiveStreamMetadata = realFunc
 						FluxDispatcher.unsubscribe("QUESTS_SEND_HEARTBEAT_SUCCESS", fn)
@@ -169,7 +196,7 @@ if (quests.length === 0) {
 					}
 				}
 
-				console.log("Quest completed!")
+				console.log(`Quest "${questName}" completed!`)
 				doJob()
 			}
 			fn()
