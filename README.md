@@ -1,6 +1,6 @@
 # 🌌 Discord ORBS: Automated Discord Quests Completer
 
-![Discord Orbs Banner](discord-launches-orbs-to-reward-users-through-quests_l1200.jpg)
+![Discord Orbs Banner](image.jpg)
 
 An advanced, client-side automation utility for Discord, designed to automatically complete active **Discord Quests** directly from the developer console of the Discord application or web browser. 
 
